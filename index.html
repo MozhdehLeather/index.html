@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WhatsApp Message Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #25D366;
+        }
+        .message-box {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .contact-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .contact-link {
+            flex-grow: 1;
+            background-color: #25D366;
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .contact-link:hover {
+            background-color: #128C7E;
+        }
+        .contact-link.done {
+            background-color: #888;
+        }
+        .instructions {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-left: 4px solid #25D366;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #25D366;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #128C7E;
+        }
+        .status-filter {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WhatsApp Message Tracker</h1>
+    
+    <div class="message-box">
+        <strong>Your Message:</strong>
+        <p>Hello, I am looking for custom boxes for leather wallets. Kindly let me know if you can assist with this. Thank you!</p>
+    </div>
+
+    <div class="status-filter">
+        <label>
+            <input type="radio" name="filter" value="all" checked> Show All
+        </label>
+        <label>
+            <input type="radio" name="filter" value="pending"> Show Pending
+        </label>
+        <label>
+            <input type="radio" name="filter" value="done"> Show Completed
+        </label>
+    </div>
+    
+    <div class="contact-list" id="contactList">
+        <!-- Contacts will be generated here -->
+    </div>
+    
+    <div class="controls">
+        <button id="markAllDone">Mark All as Done</button>
+        <button id="markAllPending">Mark All as Pending</button>
+        <button id="exportData">Export Progress</button>
+    </div>
+    
+    <div class="instructions">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Make sure you're logged in to WhatsApp Web</li>
+            <li>Click any contact link to open the chat</li>
+            <li>Mark as done using the checkbox when message is sent</li>
+            <li>Your progress is automatically saved</li>
+            <li>Use filters to view pending/completed messages</li>
+        </ol>
+    </div>
+
+    <script>
+        // Your phone numbers
+        const phoneNumbers = [
+            "918048980028", "918046042620", "918046058383", "918049862325", "918048955279",
+            "918046052249", "918046073408", "918048955455", "917942671708", "918046042620",
+            "918047505381", "918048971790", "918047646496", "918048962325", "918044944028"
+        ];
+        
+        // Your message (URL encoded)
+        const message = encodeURIComponent("Hello, I am looking for custom boxes for leather wallets. Kindly let me know if you can assist with this. Thank you!");
+        
+        // Load saved progress from local storage
+        let completedNumbers = JSON.parse(localStorage.getItem('whatsappTrackerCompleted')) || [];
+        
+        // Get DOM elements
+        const contactList = document.getElementById('contactList');
+        const markAllDoneBtn = document.getElementById('markAllDone');
+        const markAllPendingBtn = document.getElementById('markAllPending');
+        const exportDataBtn = document.getElementById('exportData');
+        const filterRadios = document.querySelectorAll('input[name="filter"]');
+        
+        // Render contact list
+        function renderContacts(filter = 'all') {
+            contactList.innerHTML = '';
+            
+            phoneNumbers.forEach(number => {
+                const isDone = completedNumbers.includes(number);
+                
+                // Apply filter
+                if (filter === 'pending' && isDone) return;
+                if (filter === 'done' && !isDone) return;
+                
+                const item = document.createElement('div');
+                item.className = 'contact-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = isDone;
+                checkbox.addEventListener('change', () => toggleNumber(number));
+                
+                const link = document.createElement('a');
+                link.href = `https://web.whatsapp.com/send?phone=${number}&text=${message}`;
+                link.className = `contact-link ${isDone ? 'done' : ''}`;
+                link.textContent = number;
+                link.target = '_blank';
+                
+                item.appendChild(checkbox);
+                item.appendChild(link);
+                contactList.appendChild(item);
+            });
+        }
+        
+        // Toggle number completion status
+        function toggleNumber(number) {
+            const index = completedNumbers.indexOf(number);
+            if (index === -1) {
+                completedNumbers.push(number);
+            } else {
+                completedNumbers.splice(index, 1);
+            }
+            saveProgress();
+            renderContacts(document.querySelector('input[name="filter"]:checked').value);
+        }
+        
+        // Save progress to local storage
+        function saveProgress() {
+            localStorage.setItem('whatsappTrackerCompleted', JSON.stringify(completedNumbers));
+        }
+        
+        // Event listeners
+        markAllDoneBtn.addEventListener('click', () => {
+            completedNumbers = [...phoneNumbers];
+            saveProgress();
+            renderContacts(document.querySelector('input[name="filter"]:checked').value);
+        });
+        
+        markAllPendingBtn.addEventListener('click', () => {
+            completedNumbers = [];
+            saveProgress();
+            renderContacts(document.querySelector('input[name="filter"]:checked').value);
+        });
+        
+        exportDataBtn.addEventListener('click', () => {
+            const data = {
+                completed: completedNumbers,
+                pending: phoneNumbers.filter(num => !completedNumbers.includes(num))
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'whatsapp_progress.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        
+        filterRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                renderContacts(e.target.value);
+            });
+        });
+        
+        // Initial render
+        renderContacts();
+    </script>
+</body>
+</html>
